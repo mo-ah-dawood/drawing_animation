@@ -15,8 +15,8 @@ class AnimatedDrawingWithTickerState extends AbstractAnimatedDrawingState
           this.onFinishAnimationDefault();
         });
         //Animation is completed when last frame is painted not when animation controller is finished
-        if (this.controller.status == AnimationStatus.dismissed ||
-            this.controller.status == AnimationStatus.completed) {
+        if (this.animation.status == AnimationStatus.dismissed ||
+            this.animation.status == AnimationStatus.completed) {
           this.finished = true;
         }
       }
@@ -28,52 +28,9 @@ class AnimatedDrawingWithTickerState extends AbstractAnimatedDrawingState
   bool finished = true;
 
   @override
-  void didUpdateWidget(AnimatedDrawing oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    controller.duration = widget.duration;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    controller = new AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-    addListenersToAnimationController();
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    buildAnimation();
     return createCustomPaint(context);
   }
 
 //
-  Future<void> buildAnimation() async {
-    try {
-      if ((this.paused ||
-              (this.finished &&
-                  !(this.controller.status == AnimationStatus.forward))) &&
-          this.widget.run == true) {
-        this.paused = false;
-        this.finished = false;
-        this.controller.reset();
-        this.onFinishEvoked = false;
-        this.controller.forward();
-      } else if ((this.controller.status == AnimationStatus.forward) &&
-          this.widget.run == false) {
-        this.controller.stop();
-        this.paused = true;
-      }
-    } on TickerCanceled {
-      // TODO usecase?
-    }
-  }
 }

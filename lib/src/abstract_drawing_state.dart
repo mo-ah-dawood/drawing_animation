@@ -15,7 +15,6 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
   AbstractAnimatedDrawingState() {
     this.onFinishAnimation = onFinishAnimationDefault;
   }
-
   Animation<double> animation;
   CurvedAnimation curve;
   Curve animationCurve;
@@ -112,10 +111,7 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
   //TODO Refactor
   Animation<double> getAnimation() {
     Animation<double> _animation;
-    if (this.widget.run == null || !this.widget.run) {
-      _animation = this.animation;
-    } else if (this.curve != null &&
-        this.animationCurve == widget.animationCurve) {
+    if (this.curve != null && this.animationCurve == widget.animationCurve) {
       _animation = this.curve;
     } else if (widget.animationCurve != null && this.animation != null) {
       this.curve =

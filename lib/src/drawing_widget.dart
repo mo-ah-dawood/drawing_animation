@@ -36,9 +36,6 @@ class AnimatedDrawing extends StatefulWidget {
     this.assetPath, {
     //Standard
     this.animation,
-    //Simplified version
-    this.run,
-    this.duration,
     this.animationCurve,
     this.onFinish,
     this.onPaint,
@@ -83,9 +80,6 @@ class AnimatedDrawing extends StatefulWidget {
     this.paints = const <Paint>[],
     //Standard
     this.animation,
-    //Simplified version
-    this.run,
-    this.duration,
     this.animationCurve,
     this.onFinish,
     this.onPaint,
@@ -146,16 +140,6 @@ class AnimatedDrawing extends StatefulWidget {
   ///Denotes the order in which the path elements are drawn to canvas when [lineAnimation] is set to [LineAnimation.oneByOne]. When no [animationOrder] is specified it defaults to [PathOrder.original]. Do not confuse this option with the default rendering order, whereas the first path elements are painted first to the canvas and therefore potentially occluded by subsequent elements ([w3-specs](https://www.w3.org/TR/SVG/render.html#RenderingOrder)). For now the rendering order always defaults to [PathOrder.original].
   final PathOrder animationOrder;
 
-  /// When no custom animation controller is provided the state of the animation can be controlled via [run].
-  ///
-  /// Is [run] set to true the first animation cycle is triggered.
-  ///
-  /// By default every animation repeats infinitely. For running an animation only once you can use the callback [onFinish] to set [run] to false after the first cycle completed. When [run] is set to false while the animation is still running, the animation is stopped at that point in time. If [run] is set to true again the animation is reset to the beginning. To continue the animation at the previous value you might consider using [controller].
-  final bool run;
-
-  /// When no custom animation controller is provided the duration of the animation can be controlled via [duration].
-  final Duration duration;
-
   /// When [width] is specified parent constraints are ignored. When only [width] or [height] is specified the original aspect ratio is preserved.
   final double width;
 
@@ -190,7 +174,6 @@ class AnimatedDrawing extends StatefulWidget {
 
   // TODO Refactor SRP
   void assertAnimationParameters() {
-    assert(!(this.animation == null &&
-        (this.run == null || this.duration == null)));
+    assert(!(this.animation == null));
   }
 }
