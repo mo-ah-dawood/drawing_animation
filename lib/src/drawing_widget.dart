@@ -35,7 +35,7 @@ class AnimatedDrawing extends StatefulWidget {
   AnimatedDrawing.svg(
     this.assetPath, {
     //Standard
-    this.controller,
+    this.animation,
     //Simplified version
     this.run,
     this.duration,
@@ -51,8 +51,7 @@ class AnimatedDrawing extends StatefulWidget {
     this.scaleToViewport = true,
     this.debug,
   })  : this.paths = [],
-        this.paints = []
-        {
+        this.paints = [] {
     assertAnimationParameters();
     assert(this.assetPath.isNotEmpty);
   }
@@ -83,7 +82,7 @@ class AnimatedDrawing extends StatefulWidget {
     //AnimatedDrawing.paths
     this.paints = const <Paint>[],
     //Standard
-    this.controller,
+    this.animation,
     //Simplified version
     this.run,
     this.duration,
@@ -98,8 +97,7 @@ class AnimatedDrawing extends StatefulWidget {
     this.lineAnimation = LineAnimation.oneByOne,
     this.scaleToViewport = true,
     this.debug,
-  }) : this.assetPath = ''
-  {
+  }) : this.assetPath = '' {
     assertAnimationParameters();
     assert(this.paths.isNotEmpty);
     if (this.paints.isNotEmpty) assert(this.paints.length == this.paths.length);
@@ -125,7 +123,7 @@ class AnimatedDrawing extends StatefulWidget {
   /// When a animation controller is specified, the progress of the animation can be controlled externally.
   ///
   /// The visibility of the rendered SVG depends on the current controller.value but also on the type of [LineAnimation]. When no controller is provided the progress of the animation is controlled via the fields [run], [duration].
-  final AnimationController controller;
+  final Animation<double> animation;
 
   /// Easing curves are used to adjust the rate of change of an animation over time, allowing them to speed up and slow down, rather than moving at a constant rate.
   ///
@@ -184,14 +182,15 @@ class AnimatedDrawing extends StatefulWidget {
 
   @override
   AbstractAnimatedDrawingState createState() {
-    if (this.controller != null) {
-      return new AnimatedDrawingState();
+    if (this.animation != null) {
+      return AnimatedDrawingState();
     }
-    return new AnimatedDrawingWithTickerState();
+    return AnimatedDrawingWithTickerState();
   }
 
   // TODO Refactor SRP
   void assertAnimationParameters() {
-    assert(!(this.controller == null && (this.run == null || this.duration == null)));
+    assert(!(this.animation == null &&
+        (this.run == null || this.duration == null)));
   }
 }
