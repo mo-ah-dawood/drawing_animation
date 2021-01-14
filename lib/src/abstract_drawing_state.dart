@@ -16,7 +16,7 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
     this.onFinishAnimation = onFinishAnimationDefault;
   }
 
-  AnimationController controller;
+  Animation<double> animation;
   CurvedAnimation curve;
   Curve animationCurve;
   AnimationRange range;
@@ -47,7 +47,7 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
     if (newPathPainted(currentPaintedPathIndex)) {
       evokeOnPaintForNewlyPaintedPaths(currentPaintedPathIndex);
     }
-    if (this.controller.status == AnimationStatus.completed) {
+    if (this.animation.status == AnimationStatus.completed) {
       this.onFinishAnimation();
     }
   }
@@ -102,30 +102,30 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
   }
 
   void applyAnimationCurve() {
-    if (this.controller != null && widget.animationCurve != null) {
+    if (this.animation != null && widget.animationCurve != null) {
       this.curve = CurvedAnimation(
-          parent: this.controller, curve: this.widget.animationCurve);
+          parent: this.animation, curve: this.widget.animationCurve);
       this.animationCurve = widget.animationCurve;
     }
   }
 
   //TODO Refactor
   Animation<double> getAnimation() {
-    Animation<double> animation;
+    Animation<double> _animation;
     if (this.widget.run == null || !this.widget.run) {
-      animation = this.controller;
+      _animation = this.animation;
     } else if (this.curve != null &&
         this.animationCurve == widget.animationCurve) {
-      animation = this.curve;
-    } else if (widget.animationCurve != null && this.controller != null) {
-      this.curve = CurvedAnimation(
-          parent: this.controller, curve: widget.animationCurve);
+      _animation = this.curve;
+    } else if (widget.animationCurve != null && this.animation != null) {
+      this.curve =
+          CurvedAnimation(parent: this.animation, curve: widget.animationCurve);
       this.animationCurve = widget.animationCurve;
-      animation = this.curve;
+      _animation = this.curve;
     } else {
-      animation = this.controller;
+      _animation = this.animation;
     }
-    return animation;
+    return _animation;
   }
 
   void applyPathOrder() {
@@ -235,18 +235,18 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
   // TODO Refactor
   void addListenersToAnimationController() {
     if (this.debug.recordFrames) {
-      this.controller.view.addListener(() {
+      this.animation.addListener(() {
         setState(() {
-          if (this.controller.status == AnimationStatus.forward) {
+          if (this.animation.status == AnimationStatus.forward) {
             iterateFrame(debug);
           }
         });
       });
     }
 
-    this.controller.view.addListener(() {
+    this.animation.addListener(() {
       setState(() {
-        if (this.controller.status == AnimationStatus.dismissed) {
+        if (this.animation.status == AnimationStatus.dismissed) {
           this.lastPaintedPathIndex = -1;
         }
       });
@@ -262,8 +262,7 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
   void parsePathData() {
     SvgParser parser = new SvgParser();
     if (svgAssetProvided()) {
-      if(this.widget.assetPath == this.assetPath)
-        return;
+      if (this.widget.assetPath == this.assetPath) return;
 
       parseFromSvgAsset(parser);
     } else if (pathsProvided()) {
@@ -299,7 +298,10 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
 
   bool checkIfDefaultOrderSortingRequired() {
     // always keep paths for allAtOnce animation in original path order so we do not sort for the correct PaintOrder later on (which is pretty expensive for AllAtOncePainter)
-    final bool defaultSortingWhenNoOrderDefined = this.widget.lineAnimation == LineAnimation.allAtOnce && this.animationOrder != PathOrders.original;
-    return defaultSortingWhenNoOrderDefined || this.widget.lineAnimation == null;
+    final bool defaultSortingWhenNoOrderDefined =
+        this.widget.lineAnimation == LineAnimation.allAtOnce &&
+            this.animationOrder != PathOrders.original;
+    return defaultSortingWhenNoOrderDefined ||
+        this.widget.lineAnimation == null;
   }
 }
