@@ -5,7 +5,6 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 
 import 'debug.dart';
 import 'parser.dart';
@@ -31,13 +30,16 @@ class PaintedPainter extends PathPainter {
     if (canPaint) {
       //pathSegments for AllAtOncePainter are always in the order of PathOrders.original
       pathSegments.forEach((segment) {
-        Paint paint = (this.paints.isNotEmpty)
-            ? this.paints[segment.pathIndex]
-            : (new Paint()
-              ..color = segment.color
-              ..style = PaintingStyle.stroke
-              ..strokeCap = StrokeCap.square
-              ..strokeWidth = segment.strokeWidth);
+        Paint paint;
+        if ((paints.isNotEmpty)) {
+          paint = paints[segment.pathIndex];
+        } else {
+          paint = (Paint()
+            ..color = segment.color
+            ..style = PaintingStyle.stroke
+            ..strokeCap = StrokeCap.square
+            ..strokeWidth = segment.strokeWidth);
+        }
         canvas.drawPath(segment.path, paint);
       });
 
@@ -66,14 +68,14 @@ class AllAtOncePainter extends PathPainter {
     if (canPaint) {
       //pathSegments for AllAtOncePainter are always in the order of PathOrders.original
       pathSegments.forEach((segment) {
-        Path subPath = segment.path
+        var subPath = segment.path
             .computeMetrics()
             .first
-            .extractPath(0, segment.length * this.animation.value);
+            .extractPath(0, segment.length * animation.value);
 
-        Paint paint = (this.paints.isNotEmpty)
-            ? this.paints[segment.pathIndex]
-            : (new Paint()
+        var paint = (paints.isNotEmpty)
+            ? paints[segment.pathIndex]
+            : (Paint()
               ..color = segment.color
               ..style = PaintingStyle.stroke
               ..strokeCap = StrokeCap.square
@@ -96,11 +98,11 @@ class OneByOnePainter extends PathPainter {
       PaintedSegmentCallback onFinishCallback,
       bool scaleToViewport,
       DebugOptions debugOptions)
-      : this.totalPathSum = 0,
+      : totalPathSum = 0,
         super(animation, pathSegments, customDimensions, paints,
             onFinishCallback, scaleToViewport, debugOptions) {
     if (this.pathSegments != null) {
-      this.pathSegments.forEach((e) => this.totalPathSum += e.length);
+      this.pathSegments.forEach((e) => totalPathSum += e.length);
     }
   }
 
@@ -114,7 +116,7 @@ class OneByOnePainter extends PathPainter {
   double _paintedLength = 0.0;
 
   /// Path segments which will be painted to canvas at current frame
-  List<PathSegment> toPaint = new List();
+  List<PathSegment> toPaint = [];
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -122,9 +124,9 @@ class OneByOnePainter extends PathPainter {
 
     if (canPaint) {
       //[1] Calculate and search for upperBound of total path length which should be painted
-      double upperBound = this.animation.value * totalPathSum;
-      int currentIndex = this.paintedSegmentIndex;
-      double currentLength = this._paintedLength;
+      var upperBound = animation.value * totalPathSum;
+      var currentIndex = paintedSegmentIndex;
+      var currentLength = _paintedLength;
       while (currentIndex < pathSegments.length - 1) {
         if (currentLength + pathSegments[currentIndex].length < upperBound) {
           toPaint.add(pathSegments[currentIndex]);
@@ -135,19 +137,20 @@ class OneByOnePainter extends PathPainter {
         }
       }
       //[2] Extract subPath of last path which breaks the upperBound
-      double subPathLength = upperBound - currentLength;
-      PathSegment lastPathSegment = pathSegments[currentIndex];
+      var subPathLength = upperBound - currentLength;
+      var lastPathSegment = pathSegments[currentIndex];
 
-      Path subPath = lastPathSegment.path
+      var subPath = lastPathSegment.path
           .computeMetrics()
           .first
           .extractPath(0, subPathLength);
-      this.paintedSegmentIndex = currentIndex;
-      this._paintedLength = currentLength;
+      paintedSegmentIndex = currentIndex;
+      _paintedLength = currentLength;
       // //[3] Paint all selected paths to canvas
       Paint paint;
       Path tmp;
-      if (this.animation.value == 1.0) {
+      if (animation.value == 1.0) {
+        // ignore: todo
         //hotfix: to ensure callback for last segment TODO not pretty
         toPaint.clear();
         toPaint.addAll(pathSegments);
@@ -161,32 +164,37 @@ class OneByOnePainter extends PathPainter {
       //[3.3] Paint elements
       (toPaint..sort(Extractor.getComparator(PathOrders.original)))
           .forEach((segment) {
-        paint = (this.paints.isNotEmpty)
-            ? this.paints[segment.pathIndex]
-            : (new Paint() //Paint per path TODO implement Paint per PathSegment?
-              //TODO Debug disappearing first lineSegment
-              // ..color = (segment.relativeIndex == 0 && segment.pathIndex== 0) ? Colors.red : ((segment.relativeIndex == 1) ? Colors.blue : segment.color)
-              ..color = segment.color
-              ..style = PaintingStyle.stroke
-              ..strokeCap = StrokeCap.square
-              ..strokeWidth = segment.strokeWidth);
+        if ((paints.isNotEmpty)) {
+          paint = paints[segment.pathIndex];
+        } else {
+          // ignore: todo
+          paint = (Paint() //Paint per path TODO implement Paint per PathSegment?
+            // ignore: todo
+            //TODO Debug disappearing first lineSegment
+            // ..color = (segment.relativeIndex == 0 && segment.pathIndex== 0) ? Colors.red : ((segment.relativeIndex == 1) ? Colors.blue : segment.color)
+            ..color = segment.color
+            ..style = PaintingStyle.stroke
+            ..strokeCap = StrokeCap.square
+            ..strokeWidth = segment.strokeWidth);
+        }
         canvas.drawPath(segment.path, paint);
       });
 
-      if (this.animation.value != 1.0) {
+      if (animation.value != 1.0) {
         //[3.4] Remove last subPath
         toPaint.remove(lastPathSegment);
         lastPathSegment.path = tmp;
       }
 
+      // ignore: todo
       //TODO Problem: Path drawning is a continous iteration over the length of all segments. To make a callback which fires exactly when path is drawn is therefore not possible (I can only ensure one of the two cases: 1) segment is completely drawn 2) no next segment was started to be drawn yet - For now: 1)
       // double remainingLength = lastPathSegment.length - subPathLength;
 
       super.onFinish(canvas, size, lastPainted: toPaint.length - 1);
     } else {
-      this.paintedSegmentIndex = 0;
-      this._paintedLength = 0.0;
-      this.toPaint.clear();
+      paintedSegmentIndex = 0;
+      _paintedLength = 0.0;
+      toPaint.clear();
     }
   }
 }
@@ -203,7 +211,7 @@ abstract class PathPainter extends CustomPainter {
       this.debugOptions)
       : canPaint = false,
         super(repaint: animation) {
-    if (this.pathSegments != null) {
+    if (pathSegments != null) {
       calculateBoundingBox();
     }
   }
@@ -236,90 +244,87 @@ abstract class PathPainter extends CustomPainter {
   DebugOptions debugOptions;
   ui.PictureRecorder recorder;
 
+  // ignore: todo
   // Get boundingBox by combining boundingBox of each PathSegment and inflating the resulting bounding box by half of the found max strokeWidth TODO find a better solution. This does only work if the stroke with maxWidth defines on side of bounding box. Otherwise it results to unwanted padding.
   void calculateBoundingBox() {
-    Rect bb = this.pathSegments.first.path.getBounds();
-    double strokeWidth = 0;
+    var bb = pathSegments.first.path.getBounds();
+    var strokeWidth = 0;
 
-    this.pathSegments.forEach((e) {
+    pathSegments.forEach((e) {
       bb = bb.expandToInclude(e.path.getBounds());
       if (strokeWidth < e.strokeWidth) {
-        strokeWidth = e.strokeWidth;
+        strokeWidth = e.strokeWidth.toInt();
       }
     });
 
-    if (this.paints.isNotEmpty) {
+    if (paints.isNotEmpty) {
       paints.forEach((e) {
         if (strokeWidth < e.strokeWidth) {
-          strokeWidth = e.strokeWidth;
+          strokeWidth = e.strokeWidth.toInt();
         }
       });
     }
-    this.pathBoundingBox = bb.inflate(strokeWidth / 2);
-    this.strokeWidth = strokeWidth;
+    pathBoundingBox = bb.inflate(strokeWidth / 2);
+    this.strokeWidth = strokeWidth.toDouble();
   }
 
   void onFinish(Canvas canvas, Size size, {int lastPainted = -1}) {
     //-1: no segment was painted yet, 0 first segment
-    if (this.debugOptions.recordFrames) {
-      final ui.Picture picture = recorder.endRecording();
-      int frame = getFrameCount(this.debugOptions);
+    if (debugOptions.recordFrames) {
+      final picture = recorder.endRecording();
+      var frame = getFrameCount(debugOptions);
       if (frame >= 0) {
-        print("Write frame $frame");
+        print('Write frame $frame');
         //pass size when you want the whole viewport of the widget
         writeToFile(
             picture,
-            "${debugOptions.outPutDir}/${debugOptions.fileName}_$frame.png",
+            '${debugOptions.outPutDir}/${debugOptions.fileName}_$frame.png',
             size);
       }
     }
-    this.onFinishCallback(lastPainted);
+    onFinishCallback(lastPainted);
   }
 
   Canvas paintOrDebug(Canvas canvas, Size size) {
-    if (this.debugOptions.recordFrames) {
+    if (debugOptions.recordFrames) {
       recorder = ui.PictureRecorder();
       canvas = Canvas(recorder);
       //Color background
       // canvas.drawColor(Color.fromRGBO(224, 121, 42, 1.0),BlendMode.srcOver);
       //factor for higher resolution
-      canvas.scale(this.debugOptions.resolutionFactor,
-          this.debugOptions.resolutionFactor);
+      canvas.scale(
+          debugOptions.resolutionFactor, debugOptions.resolutionFactor);
     }
     paintPrepare(canvas, size);
     return canvas;
   }
 
   void paintPrepare(Canvas canvas, Size size) {
-    this.canPaint = this.animation.status == AnimationStatus.forward ||
-        this.animation.status == AnimationStatus.completed;
+    canPaint = animation.status == AnimationStatus.forward ||
+        animation.status == AnimationStatus.completed;
 
-    if (this.canPaint) viewBoxToCanvas(canvas, size);
+    if (canPaint) viewBoxToCanvas(canvas, size);
   }
 
   Future<void> writeToFile(
       ui.Picture picture, String fileName, Size size) async {
-    _ScaleFactor scale = calculateScaleFactor(size);
-    ByteData byteData = await ((await picture.toImage(
-            (scale.x *
-                    this.debugOptions.resolutionFactor *
-                    this.pathBoundingBox.width)
+    var scale = calculateScaleFactor(size);
+    var byteData = await ((await picture.toImage(
+            (scale.x * debugOptions.resolutionFactor * pathBoundingBox.width)
                 .round(),
-            (scale.y *
-                    this.debugOptions.resolutionFactor *
-                    this.pathBoundingBox.height)
+            (scale.y * debugOptions.resolutionFactor * pathBoundingBox.height)
                 .round()))
         .toByteData(format: ui.ImageByteFormat.png));
     final buffer = byteData.buffer;
     await File(fileName).writeAsBytes(
         buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes));
-    print("File: $fileName written.");
+    print('File: $fileName written.');
   }
 
   _ScaleFactor calculateScaleFactor(Size viewBox) {
     //Scale factors
-    double dx = (viewBox.width) / this.pathBoundingBox.width;
-    double dy = (viewBox.height) / this.pathBoundingBox.height;
+    var dx = (viewBox.width) / pathBoundingBox.width;
+    var dy = (viewBox.height) / pathBoundingBox.height;
 
     //Applied scale factors
     double ddx, ddy;
@@ -329,7 +334,7 @@ abstract class PathPainter extends CustomPainter {
 
     //Case 1: Both width/height is specified or MediaQuery
     if (!viewBox.isEmpty) {
-      if (this.customDimensions != null) {
+      if (customDimensions != null) {
         //Custom width/height
         ddx = dx;
         ddy = dy;
@@ -346,9 +351,9 @@ abstract class PathPainter extends CustomPainter {
   }
 
   void viewBoxToCanvas(Canvas canvas, Size size) {
-    if (this.debugOptions.showViewPort) {
-      Rect clipRect1 = Offset.zero & size;
-      Paint ppp = new Paint()
+    if (debugOptions.showViewPort) {
+      var clipRect1 = Offset.zero & size;
+      var ppp = Paint()
         ..style = PaintingStyle.stroke
         ..color = Colors.green
         ..strokeWidth = 10.50;
@@ -357,32 +362,32 @@ abstract class PathPainter extends CustomPainter {
 
     if (scaleToViewport) {
       //Viewbox with Offset.zero
-      Size viewBox = (this.customDimensions != null)
-          ? this.customDimensions
-          : Size.copy(size);
-      _ScaleFactor scale = calculateScaleFactor(viewBox);
+      var viewBox =
+          (customDimensions != null) ? customDimensions : Size.copy(size);
+      var scale = calculateScaleFactor(viewBox);
       canvas.scale(scale.x, scale.y);
 
       //If offset
-      Offset offset = Offset.zero - this.pathBoundingBox.topLeft;
+      var offset = Offset.zero - pathBoundingBox.topLeft;
       canvas.translate(offset.dx, offset.dy);
 
+      // ignore: todo
       //Center offset - TODO should this be a option flag?
-      if (this.debugOptions.recordFrames != true) {
-        Offset center = Offset(
-            (size.width / scale.x - this.pathBoundingBox.width) / 2,
-            (size.height / scale.y - this.pathBoundingBox.height) / 2);
+      if (debugOptions.recordFrames != true) {
+        var center = Offset((size.width / scale.x - pathBoundingBox.width) / 2,
+            (size.height / scale.y - pathBoundingBox.height) / 2);
         canvas.translate(center.dx, center.dy);
       }
     }
 
     //Clip bounds
-    Rect clipRect = this.pathBoundingBox;
-    if (!(this.debugOptions.showBoundingBox || this.debugOptions.showViewPort))
+    var clipRect = pathBoundingBox;
+    if (!(debugOptions.showBoundingBox || debugOptions.showViewPort)) {
       canvas.clipRect(clipRect);
+    }
 
-    if (this.debugOptions.showBoundingBox) {
-      Paint pp = new Paint()
+    if (debugOptions.showBoundingBox) {
+      var pp = Paint()
         ..style = PaintingStyle.stroke
         ..color = Colors.red
         ..strokeWidth = 0.500;

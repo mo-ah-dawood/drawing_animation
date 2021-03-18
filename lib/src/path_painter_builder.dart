@@ -53,7 +53,7 @@ class PathPainterBuilder {
   }
 
   void setDebugOptions(DebugOptions debug) {
-    this.debugOptions = debug;
+    debugOptions = debug;
   }
 
   void setPathSegments(List<PathSegment> pathSegments) {

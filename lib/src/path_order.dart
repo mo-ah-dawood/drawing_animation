@@ -11,22 +11,23 @@ import 'parser.dart';
 class PathOrder {
   /// The [PathSegment] order is defined according to their respective length, starting with the longest element. If [reverse] is true, the smallest element is selected first.
   PathOrder.byLength({reverse = false})
-      : this._comparator = _byLength(reverse: reverse);
+      : _comparator = _byLength(reverse: reverse);
 
   /// The [PathSegment] order is defined according to its position in the overall bounding box. The position is defined as the center of the respective bounding box of each [PathSegment] element. The field [direction] specifies in which direction the position attribute is compared.
   PathOrder.byPosition({@required AxisDirection direction})
-      : this._comparator = _byPosition(direction: direction);
+      : _comparator = _byPosition(direction: direction);
 
   /// Internal
   PathOrder._(this._comparator);
 
   /// Restores the original order of PathSegments
-  PathOrder._original() : this._comparator = __original();
+  PathOrder._original() : _comparator = __original();
 
+  // ignore: prefer_final_fields
   Comparator<PathSegment> _comparator;
 
   Comparator<PathSegment> _getComparator() {
-    return this._comparator;
+    return _comparator;
   }
 
   static Comparator<PathSegment> _byLength({reverse = false}) {
@@ -81,7 +82,7 @@ class PathOrder {
 
   static Comparator<PathSegment> __original() {
     return (PathSegment a, PathSegment b) {
-      int comp = a.firstSegmentOfPathIndex.compareTo(b.firstSegmentOfPathIndex);
+      var comp = a.firstSegmentOfPathIndex.compareTo(b.firstSegmentOfPathIndex);
       if (comp == 0) comp = a.relativeIndex.compareTo(b.relativeIndex);
       return comp;
     };
@@ -90,12 +91,13 @@ class PathOrder {
   /// Returns a new PathOrder object which first sorts [PathSegment] elements according to this instance and further sorts according to [secondPathOrder].
   PathOrder combine(PathOrder secondPathOrder) {
     return PathOrder._((PathSegment a, PathSegment b) {
-      int comp = _comparator(a, b);
+      var comp = _comparator(a, b);
       if (comp == 0) comp = secondPathOrder._comparator(a, b);
       return comp;
     });
   }
 
+// ignore: todo
 //TODO Implement? You can also do list.reversed.
 // PathOrder reverse(){
 // }

@@ -9,11 +9,12 @@ import 'parser.dart';
 import 'path_painter_builder.dart';
 import 'range.dart';
 import 'path_order.dart';
+// ignore: todo
 
 /// Base class for _AnimatedDrawingState and _AnimatedDrawingWithTickerState
 abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
   AbstractAnimatedDrawingState() {
-    this.onFinishAnimation = onFinishAnimationDefault;
+    onFinishAnimation = onFinishAnimationDefault;
   }
   Animation<double> animation;
   CurvedAnimation curve;
@@ -24,11 +25,11 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
   DebugOptions debug;
   int lastPaintedPathIndex = -1;
 
-  List<PathSegment> pathSegments = List<PathSegment>();
-  List<PathSegment> pathSegmentsToAnimate =
-      List<PathSegment>(); //defined by [range.start] and [range.end]
+  List<PathSegment> pathSegments = List<PathSegment>.empty(growable: true);
+  List<PathSegment> pathSegmentsToAnimate = List<PathSegment>.empty(
+      growable: true); //defined by [range.start] and [range.end]
   List<PathSegment> pathSegmentsToPaintAsBackground =
-      List<PathSegment>(); //defined by < [range.start]
+      List<PathSegment>.empty(growable: true); //defined by < [range.start]
 
   VoidCallback onFinishAnimation;
 
@@ -36,8 +37,8 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
   bool onFinishEvoked = false;
 
   void onFinishAnimationDefault() {
-    if (this.widget.onFinish != null) {
-      this.widget.onFinish();
+    if (widget.onFinish != null) {
+      widget.onFinish();
       if (debug.recordFrames) resetFrame(debug);
     }
   }
@@ -46,15 +47,16 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
     if (newPathPainted(currentPaintedPathIndex)) {
       evokeOnPaintForNewlyPaintedPaths(currentPaintedPathIndex);
     }
-    if (this.animation.status == AnimationStatus.completed) {
-      this.onFinishAnimation();
+    if (animation.status == AnimationStatus.completed) {
+      onFinishAnimation();
     }
   }
 
   void evokeOnPaintForNewlyPaintedPaths(int currentPaintedPathIndex) {
-    final int paintedPaths = pathSegments[currentPaintedPathIndex].pathIndex -
+    final paintedPaths = pathSegments[currentPaintedPathIndex].pathIndex -
+        // ignore: todo
         lastPaintedPathIndex; //TODO you should iterate over the indices of the sorted path segments not the original ones
-    for (int i = lastPaintedPathIndex + 1;
+    for (var i = lastPaintedPathIndex + 1;
         i <= lastPaintedPathIndex + paintedPaths;
         i++) {
       evokeOnPaintForPath(i);
@@ -66,13 +68,13 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
     //Only evoked in next frame
     SchedulerBinding.instance.addPostFrameCallback((_) {
       setState(() {
-        this.widget.onPaint(i, this.widget.paths[i]);
+        widget.onPaint(i, widget.paths[i]);
       });
     });
   }
 
   bool newPathPainted(int currentPaintedPathIndex) {
-    return this.widget.onPaint != null &&
+    return widget.onPaint != null &&
         currentPaintedPathIndex != -1 &&
         pathSegments[currentPaintedPathIndex].pathIndex - lastPaintedPathIndex >
             0;
@@ -81,7 +83,7 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
   @override
   void didUpdateWidget(AnimatedDrawing oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (this.animationOrder != this.widget.animationOrder) {
+    if (animationOrder != widget.animationOrder) {
       applyPathOrder();
     }
   }
@@ -96,118 +98,113 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
 
   void applyDebugOptions() {
     //If DebugOptions changes a hot restart is needed.
-    this.debug = this.widget.debug;
-    this.debug ??= DebugOptions();
+    debug = widget.debug;
+    debug ??= DebugOptions();
   }
 
   void applyAnimationCurve() {
-    if (this.animation != null && widget.animationCurve != null) {
-      this.curve = CurvedAnimation(
-          parent: this.animation, curve: this.widget.animationCurve);
-      this.animationCurve = widget.animationCurve;
+    if (animation != null && widget.animationCurve != null) {
+      curve = CurvedAnimation(parent: animation, curve: widget.animationCurve);
+      animationCurve = widget.animationCurve;
     }
   }
 
+  // ignore: todo
   //TODO Refactor
   Animation<double> getAnimation() {
     Animation<double> _animation;
-    if (this.curve != null && this.animationCurve == widget.animationCurve) {
-      _animation = this.curve;
-    } else if (widget.animationCurve != null && this.animation != null) {
-      this.curve =
-          CurvedAnimation(parent: this.animation, curve: widget.animationCurve);
-      this.animationCurve = widget.animationCurve;
-      _animation = this.curve;
+    if (curve != null && animationCurve == widget.animationCurve) {
+      _animation = curve;
+    } else if (widget.animationCurve != null && animation != null) {
+      curve = CurvedAnimation(parent: animation, curve: widget.animationCurve);
+      animationCurve = widget.animationCurve;
+      _animation = curve;
     } else {
-      _animation = this.animation;
+      _animation = animation;
     }
     return _animation;
   }
 
   void applyPathOrder() {
-    if (this.pathSegments.isEmpty) return;
+    if (pathSegments.isEmpty) return;
 
     setState(() {
       if (checkIfDefaultOrderSortingRequired()) {
-        this.pathSegments.sort(Extractor.getComparator(PathOrders.original));
-        this.animationOrder = PathOrders.original;
+        pathSegments.sort(Extractor.getComparator(PathOrders.original));
+        animationOrder = PathOrders.original;
         return;
       }
 
-      if (this.widget.animationOrder != this.animationOrder) {
-        this
-            .pathSegments
-            .sort(Extractor.getComparator(this.widget.animationOrder));
-        this.animationOrder = this.widget.animationOrder;
+      if (widget.animationOrder != animationOrder) {
+        pathSegments.sort(Extractor.getComparator(widget.animationOrder));
+        animationOrder = widget.animationOrder;
       }
     });
   }
 
   PathPainter buildForegroundPainter() {
     if (pathSegmentsToAnimate.isEmpty) return null;
-    PathPainterBuilder builder =
-        preparePathPainterBuilder(this.widget.lineAnimation);
-    builder.setPathSegments(this.pathSegmentsToAnimate);
+    var builder = preparePathPainterBuilder(widget.lineAnimation);
+    builder.setPathSegments(pathSegmentsToAnimate);
     return builder.build();
   }
 
   PathPainter buildBackgroundPainter() {
     if (pathSegmentsToPaintAsBackground.isEmpty) return null;
-    PathPainterBuilder builder = preparePathPainterBuilder();
-    builder.setPathSegments(this.pathSegmentsToPaintAsBackground);
+    var builder = preparePathPainterBuilder();
+    builder.setPathSegments(pathSegmentsToPaintAsBackground);
     return builder.build();
   }
 
   PathPainterBuilder preparePathPainterBuilder([LineAnimation lineAnimation]) {
-    PathPainterBuilder builder = PathPainterBuilder(lineAnimation);
+    var builder = PathPainterBuilder(lineAnimation);
     builder.setAnimation(getAnimation());
     builder.setCustomDimensions(getCustomDimensions());
-    builder.setPaints(this.widget.paints);
-    builder.setOnFinishFrame(this.onFinishFrame);
-    builder.setScaleToViewport(this.widget.scaleToViewport);
-    builder.setDebugOptions(this.debug);
+    builder.setPaints(widget.paints);
+    builder.setOnFinishFrame(onFinishFrame);
+    builder.setScaleToViewport(widget.scaleToViewport);
+    builder.setDebugOptions(debug);
     return builder;
   }
 
+  // ignore: todo
   //TODO refactor to be range not null
   void assignPathSegmentsToPainters() {
-    if (this.pathSegments.isEmpty) return;
+    if (pathSegments.isEmpty) return;
 
-    if (this.widget.range == null) {
-      this.pathSegmentsToAnimate = this.pathSegments;
-      this.range = null;
-      this.pathSegmentsToPaintAsBackground.clear();
+    if (widget.range == null) {
+      pathSegmentsToAnimate = pathSegments;
+      range = null;
+      pathSegmentsToPaintAsBackground.clear();
       return;
     }
 
-    if (this.widget.range != this.range) {
+    if (widget.range != range) {
       checkValidRange();
 
-      this.pathSegmentsToPaintAsBackground = this
-          .pathSegments
-          .where((x) => x.pathIndex < this.widget.range.start)
+      pathSegmentsToPaintAsBackground =
+          pathSegments.where((x) => x.pathIndex < widget.range.start).toList();
+
+      pathSegmentsToAnimate = pathSegments
+          .where((x) => (x.pathIndex >= widget.range.start &&
+              x.pathIndex <= widget.range.end))
           .toList();
 
-      this.pathSegmentsToAnimate = this
-          .pathSegments
-          .where((x) => (x.pathIndex >= this.widget.range.start &&
-              x.pathIndex <= this.widget.range.end))
-          .toList();
-
-      this.range = this.widget.range;
+      range = widget.range;
     }
   }
 
   void checkValidRange() {
     RangeError.checkValidRange(
-        this.widget.range.start,
-        this.widget.range.end,
-        this.widget.paths.length - 1,
-        "start",
-        "end",
-        "The provided range is invalid for the provided number of paths.");
+        widget.range.start,
+        widget.range.end,
+        widget.paths.length - 1,
+        'start',
+        'end',
+        'The provided range is invalid for the provided number of paths.');
   }
 
+  // ignore: todo
   // TODO Refactor
   Size getCustomDimensions() {
     if (widget.height != null || widget.width != null) {
@@ -221,29 +218,31 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
   }
 
   CustomPaint createCustomPaint(BuildContext context) {
+    // ignore: todo
     updatePathData(); //TODO Refactor - SRP broken (see method name)
-    return new CustomPaint(
+    return CustomPaint(
         foregroundPainter: buildForegroundPainter(),
         painter: buildBackgroundPainter(),
         size: Size.copy(MediaQuery.of(context).size));
   }
 
+  // ignore: todo
   // TODO Refactor
   void addListenersToAnimationController() {
-    if (this.debug.recordFrames) {
-      this.animation.addListener(() {
+    if (debug.recordFrames) {
+      animation.addListener(() {
         setState(() {
-          if (this.animation.status == AnimationStatus.forward) {
+          if (animation.status == AnimationStatus.forward) {
             iterateFrame(debug);
           }
         });
       });
     }
 
-    this.animation.addListener(() {
+    animation.addListener(() {
       setState(() {
-        if (this.animation.status == AnimationStatus.dismissed) {
-          this.lastPaintedPathIndex = -1;
+        if (animation.status == AnimationStatus.dismissed) {
+          lastPaintedPathIndex = -1;
         }
       });
     });
@@ -256,9 +255,9 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
   }
 
   void parsePathData() {
-    SvgParser parser = new SvgParser();
+    var parser = SvgParser();
     if (svgAssetProvided()) {
-      if (this.widget.assetPath == this.assetPath) return;
+      if (widget.assetPath == assetPath) return;
 
       parseFromSvgAsset(parser);
     } else if (pathsProvided()) {
@@ -267,37 +266,35 @@ abstract class AbstractAnimatedDrawingState extends State<AnimatedDrawing> {
   }
 
   void parseFromPaths(SvgParser parser) {
-    parser.loadFromPaths(this
-        .widget
+    parser.loadFromPaths(widget
         .paths); //Path object are parsed completely upon every state change
     setState(() {
-      this.pathSegments = parser.getPathSegments();
+      pathSegments = parser.getPathSegments();
     });
   }
 
-  bool pathsProvided() => this.widget.paths.isNotEmpty;
+  bool pathsProvided() => widget.paths.isNotEmpty;
 
-  bool svgAssetProvided() => this.widget.assetPath.isNotEmpty;
+  bool svgAssetProvided() => widget.assetPath.isNotEmpty;
 
   void parseFromSvgAsset(SvgParser parser) {
-    parser.loadFromFile(this.widget.assetPath).then((_) {
+    parser.loadFromFile(widget.assetPath).then((_) {
       setState(() {
         //raw paths
-        this.widget.paths.clear();
-        this.widget.paths.addAll(parser.getPaths());
+        widget.paths.clear();
+        widget.paths.addAll(parser.getPaths());
         //corresponding segments
-        this.pathSegments = parser.getPathSegments();
-        this.assetPath = this.widget.assetPath;
+        pathSegments = parser.getPathSegments();
+        assetPath = widget.assetPath;
       });
     });
   }
 
   bool checkIfDefaultOrderSortingRequired() {
     // always keep paths for allAtOnce animation in original path order so we do not sort for the correct PaintOrder later on (which is pretty expensive for AllAtOncePainter)
-    final bool defaultSortingWhenNoOrderDefined =
-        this.widget.lineAnimation == LineAnimation.allAtOnce &&
-            this.animationOrder != PathOrders.original;
-    return defaultSortingWhenNoOrderDefined ||
-        this.widget.lineAnimation == null;
+    final defaultSortingWhenNoOrderDefined =
+        widget.lineAnimation == LineAnimation.allAtOnce &&
+            animationOrder != PathOrders.original;
+    return defaultSortingWhenNoOrderDefined || widget.lineAnimation == null;
   }
 }

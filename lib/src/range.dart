@@ -8,12 +8,12 @@ abstract class AnimationRange {
   final int start;
   final int end;
 
-  bool get isLower => this.start != null;
-  bool get isUpper => this.end != null;
+  bool get isLower => start != null;
+  bool get isUpper => end != null;
 
   @override
   bool operator ==(Object o) =>
-      o is AnimationRange && this.start == o.start && this.end == o.end;
+      o is AnimationRange && start == o.start && end == o.end;
 }
 
 /// Denotes a range by its relative position in the Path array provided.
